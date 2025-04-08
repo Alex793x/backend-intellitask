@@ -3,7 +3,7 @@ import { chatroomRepository, ChatroomRepository } from '../repositories/chatroom
 import { Chatroom, ChatroomDto, ChatroomRequest } from '../types';
 import { mapChatroomMemberToMemberWithUserDto } from '../utils/chatroom.mapper';
 import { chatroomMemberService, ChatroomMemberService } from './chatroomMember.service';
-import { auth, chats, fileManagement } from '~encore/clients';
+import { auth, fileManagement } from '~encore/clients';
 import { APIError } from 'encore.dev/api';
 
 export class ChatroomService extends BaseService<Chatroom, ChatroomRequest, ChatroomDto> {
@@ -32,12 +32,11 @@ export class ChatroomService extends BaseService<Chatroom, ChatroomRequest, Chat
     const membersWithUsers = chatroom.members.map((member) =>
       mapChatroomMemberToMemberWithUserDto(member, userMap.get(member.userId)!)
     );
-    const response = await chats.findChatMessagesByChatroomId({ chatroomId: chatroom.id });
     return {
       ...chatroom,
       members: membersWithUsers,
       files: chatroom.files?.map((file) => fileMap.get(file.id) || file) || [],
-      messages: response.data,
+      messages: [],
       agents: [],
     } as ChatroomDto;
   }
@@ -66,10 +65,6 @@ export class ChatroomService extends BaseService<Chatroom, ChatroomRequest, Chat
     const chatroomMessagesMap = new Map();
     // const chatroomAgentsMap = new Map();
 
-    for (const chatroom of chatrooms) {
-      const response = await chats.findChatMessagesByChatroomId({ chatroomId: chatroom.id });
-      chatroomMessagesMap.set(chatroom.id, response.data);
-    }
 
     return chatrooms.map((chatroom) => ({
       ...chatroom,
@@ -105,14 +100,10 @@ export class ChatroomService extends BaseService<Chatroom, ChatroomRequest, Chat
       };
     });
 
-    const response = await chats.findLatestChatMessageByChatroomIds({
-      chatroomIds: chatrooms.map((chatroom) => chatroom.id),
-    });
 
-    const messages = response.data;
     return chatroomsWithMembers.map((chatroom) => ({
       ...chatroom,
-      messages: messages.filter((message) => message.chatroomId === chatroom.id),
+      messages: [],
       agents: [],
       files: [],
     }));
