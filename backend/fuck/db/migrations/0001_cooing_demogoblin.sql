@@ -1,0 +1,1 @@
+ALTER TABLE "agents" RENAME COLUMN "type" TO "agent_type";
